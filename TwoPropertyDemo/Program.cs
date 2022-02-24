@@ -18,6 +18,7 @@ builder.Services.AddShardingDbContext<MyDbContext>()
         o.CreateShardingTableOnStart = true;
         o.EnsureCreatedWithOutShardingTable = true;
         o.AddShardingTableRoute<DealRoute>();
+        o.AddShardingTableRoute<Deal1Route>();
     }).AddConfig(op =>
     {
         op.ConfigId = "c1";

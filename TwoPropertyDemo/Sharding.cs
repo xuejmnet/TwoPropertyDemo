@@ -19,7 +19,14 @@ namespace TwoPropertyDemo.Domain
         public DateTimeOffset Time { get; set; }
         public string MarketAndTime => $"{Market}#{Time:yyyy}";
     }
-    public class OrderMap:IEntityTypeConfiguration<Deal>
+    public class Deal1
+    {
+        public string Id { get; set; }
+        public string Market { get; set; }
+        public DateTimeOffset Time { get; set; }
+    }
+
+    public class OrderMap : IEntityTypeConfiguration<Deal>
     {
         public void Configure(EntityTypeBuilder<Deal> builder)
         {
@@ -30,6 +37,18 @@ namespace TwoPropertyDemo.Domain
             builder.ToTable(nameof(Deal));
         }
     }
+
+    public class Deal1Map : IEntityTypeConfiguration<Deal1>
+    {
+        public void Configure(EntityTypeBuilder<Deal1> builder)
+        {
+            builder.HasKey(o => o.Id);
+            builder.Property(o => o.Id).IsUnicode(false).HasMaxLength(50);
+            builder.Property(o => o.Market).IsRequired().HasMaxLength(50);
+            builder.ToTable(nameof(Deal1));
+        }
+    }
+
     public class MyDbContext:AbstractShardingDbContext,IShardingTableDbContext
     {
         public MyDbContext(DbContextOptions options) : base(options)
@@ -40,9 +59,28 @@ namespace TwoPropertyDemo.Domain
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfiguration(new OrderMap());
+            modelBuilder.ApplyConfiguration(new Deal1Map());
         }
 
         public IRouteTail RouteTail { get; set; }
+    }
+
+    public class Deal1Route : AbstractSimpleShardingMonthKeyDateTimeOffsetVirtualTableRoute<Deal1>
+    {
+        public override void Configure(EntityMetadataTableBuilder<Deal1> builder)
+        {
+            builder.ShardingProperty(o => o.Time);
+        }
+
+        public override bool AutoCreateTableByTime()
+        {
+            return true;
+        }
+
+        public override DateTimeOffset GetBeginTime()
+        {
+            return new DateTimeOffset(new DateTime(2021, 1, 1));
+        }
     }
     public class DealRoute : AbstractShardingOperatorVirtualTableRoute<Deal,string>
     {
